@@ -1,0 +1,35 @@
+version: 2
+
+jobs:
+  build:
+    machine:
+      image: windows-server-2019-vs2019:stable
+    shell: powershell.exe
+    resource_class: windows.medium
+    steps:
+      - run:
+          name: Keep an authenticated logon session open
+          background: true
+          command: |
+            Add-Type -AssemblyName System.web
+
+            $user = "circleci"
+            $passwd = ConvertTo-SecureString -String $([System.Web.Security.Membership]::GeneratePassword(42, 10)) -AsPlainText -Force
+            $pscred = New-Object System.Management.Automation.PSCredential($user, $passwd)
+
+            Set-LocalUser -Name $user -Password $passwd
+
+            Start-Process powershell.exe -Args '$PID; ConvertFrom-SecureString $(ConvertTo-SecureString -String Hello! -AsPlainText -Force); Start-Sleep 18000' -Credential $pscred
+      - run:
+          name: Wait for a while until the background process is fully up
+          command: Start-Sleep 2
+
+      ### Define tasks below ###
+
+      - run:
+          name: Encrypt with DPAPI
+          command: ConvertFrom-SecureString $(ConvertTo-SecureString -String Hello! -AsPlainText -Force) | Tee-Object -FilePath encrypted.txt
+      - run:
+          name: Decrypt the encrypted string with DPAPI
+          command: |
+            [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($(ConvertTo-SecureString $(Get-Content encrypted.txt)))))
