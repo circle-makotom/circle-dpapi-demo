@@ -19,7 +19,7 @@ jobs:
 
             Set-LocalUser -Name $user -Password $passwd
 
-            Start-Process powershell.exe -Args '$PID; ConvertFrom-SecureString $(ConvertTo-SecureString -String Hello! -AsPlainText -Force); Start-Sleep 18000' -Credential $pscred
+            Start-Process powershell.exe -Args '$PID; ConvertFrom-SecureString $(ConvertTo-SecureString -String . -AsPlainText -Force); Start-Sleep 18000' -Credential $pscred
       - run:
           name: Wait for a while until the background process is fully up
           command: Start-Sleep 2
